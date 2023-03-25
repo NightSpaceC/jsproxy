@@ -1,9 +1,5 @@
 'use strict'
 
-/**
- * static files (404.html, sw.js, conf.js)
- */
-const ASSET_URL = 'https://etherdream.github.io/jsproxy'
 
 const JS_VER = 10
 const MAX_RETRY = 1
@@ -41,22 +37,19 @@ function newUrl(urlStr) {
   }
 }
 
-
-addEventListener('fetch', e => {
-  const ret = fetchHandler(e)
-    .catch(err => makeRes('cfworker error:\n' + err.stack, 502))
-  e.respondWith(ret)
-})
-
+export default {
+    async fetch(request, env, context) {
+      return await fetchHandler(request).catch(err => makeRes('cfworker error:\n' + err.stack, 502))
+    },
+};
 
 /**
- * @param {FetchEvent} e 
+ * @param {Request} req 
  */
-async function fetchHandler(e) {
-  const req = e.request
+async function fetchHandler(req) {
   const urlStr = req.url
   const urlObj = new URL(urlStr)
-  const path = urlObj.href.substr(urlObj.origin.length)
+  const path = urlObj.href.substring(urlObj.origin.length)
 
   if (urlObj.protocol === 'http:') {
     urlObj.protocol = 'https:'
@@ -67,7 +60,7 @@ async function fetchHandler(e) {
   }
 
   if (path.startsWith('/http/')) {
-    return httpHandler(req, path.substr(6))
+    return httpHandler(req, path.substring(6))
   }
 
   switch (path) {
@@ -78,8 +71,7 @@ async function fetchHandler(e) {
   case '/works':
     return makeRes('it works')
   default:
-    // static files
-    return fetch(ASSET_URL + path)
+    return makeRes('not found', 404)
   }
 }
 
